@@ -86,17 +86,17 @@ public class FirebaseCommandSender implements CommandSender {
 
         var messageBuilder = MulticastMessage.builder()
                 .putData("command", command.getType())
-                .putData("deviceId", device.getUniqueId());
-
-        if (command.getType().equals(Command.TYPE_POSITION_PERIODIC)) {
-            messageBuilder.putData("interval", String.valueOf(command.getInteger(Command.KEY_FREQUENCY)));
-        }
-
-        MulticastMessage message = messageBuilder
                 .setAndroidConfig(androidConfig)
                 .setApnsConfig(apnsConfig)
-                .addAllTokens(registrationTokens)
-                .build();
+                .addAllTokens(registrationTokens);
+
+        for (var entry : command.getAttributes().entrySet()) {
+            if (entry.getValue() != null) {
+                messageBuilder.putData(entry.getKey(), entry.getValue().toString());
+            }
+        }
+
+        MulticastMessage message = messageBuilder.build();
 
         var result = firebaseMessaging.sendEachForMulticast(message);
         if (result.getFailureCount() > 0) {
